@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notion 整理・散らかり防止マスター | ワークスペース設計＆整理ツール</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+    body {
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+      background-color: #f7f6f3;
+      color: #37352f;
+    }
+    .notion-card {
+      background: #ffffff;
+      border: 1px solid #e9e9e7;
+      box-shadow: 0 1px 3px rgba(15, 15, 15, 0.04);
+    }
+    .tab-active {
+      background-color: #37352f;
+      color: #ffffff;
+    }
+    .tab-inactive {
+      background-color: #ffffff;
+      color: #5a5852;
+      border: 1px solid #e9e9e7;
+    }
+    .tab-inactive:hover {
+      background-color: #efeeea;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #d3d1cb; border-radius: 3px; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-[#e9e9e7] sticky top-0 z-30">
+    <div class="max-w-5xl mx-auto px-4 py-3.5 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-[#37352f] text-white flex items-center justify-center text-xl font-bold shadow-sm">
+          N
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg sm:text-xl font-extrabold tracking-tight text-[#37352f]">
+              Notion 整理・散らかり防止マスター
+            </h1>
+            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+              v1.0
+            </span>
+          </div>
+          <p class="text-xs text-[#787774]">
+            「白紙ページの増殖」と「迷子」をゼロにする黄金ハブ構造＆ワンタップMarkdown生成
+          </p>
+        </div>
+      </div>
+
+      <!-- Progress / Check Counter -->
+      <div class="flex items-center gap-3 bg-[#f7f6f3] px-3.5 py-2 rounded-xl border border-[#e9e9e7]">
+        <div class="text-right">
+          <div class="text-[11px] font-bold text-[#787774]">整理アクション完了度</div>
+          <div class="text-sm font-extrabold text-[#37352f]" id="progressText">0 / 6 完了 (0%)</div>
+        </div>
+        <div class="w-16 h-2.5 bg-[#e9e9e7] rounded-full overflow-hidden">
+          <div id="progressBar" class="h-full bg-emerald-600 transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="max-w-5xl mx-auto px-4 pb-3 overflow-x-auto">
+      <nav class="flex gap-2 min-w-max" role="tablist">
+        <button onclick="switchTab('diagnose')" id="tab-diagnose" class="tab-active px-4 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-1.5">
+          <span>🩺</span> 1. 散らかり診断＆3原則
+        </button>
+        <button onclick="switchTab('structure')" id="tab-structure" class="tab-inactive px-4 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-1.5">
+          <span>🏛️</span> 2. 黄金ハブ階層設計
+        </button>
+        <button onclick="switchTab('template')" id="tab-template" class="tab-inactive px-4 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-1.5">
+          <span>📋</span> 3. コピペ用ホーム生成
+        </button>
+        <button onclick="switchTab('naming')" id="tab-naming" class="tab-inactive px-4 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-1.5">
+          <span>🏷️</span> 4. 命名＆DB増殖防止ルール
+        </button>
+        <button onclick="switchTab('routine')" id="tab-routine" class="tab-inactive px-4 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-1.5">
+          <span>🧹</span> 5. 週1回・5分リセット手順
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 hidden bg-[#37352f] text-white text-sm font-bold px-4 py-3 rounded-xl shadow-lg flex items-center gap-2">
+    <span>✅</span>
+    <span id="toastMsg">コピーしました！</span>
+  </div>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-6 space-y-6">
+
+    <!-- TAB 1: 散らかり診断＆3原則 -->
+    <section id="panel-diagnose" class="space-y-6">
+      <div class="notion-card rounded-2xl p-5 sm:p-6">
+        <h2 class="text-lg font-extrabold flex items-center gap-2 mb-1">
+          <span>🩺</span> 現在のNotion「散らかり症状」セルフ診断
+        </h2>
+        <p class="text-sm text-[#787774] mb-4">
+          当てはまる項目をタップしてください。今のあなたのNotionに最も効く処方箋を自動表示します。
+        </p>
+
+        <div class="grid sm:grid-cols-2 gap-3" id="symptomList">
+          <!-- Rendered by JS -->
+        </div>
+
+        <div id="diagnosisResult" class="mt-5 p-4 rounded-xl bg-amber-50 border border-amber-200">
+          <div class="text-xs font-extrabold text-amber-800 uppercase tracking-wider mb-1">💡 診断結果＆最優先の処方箋</div>
+          <p id="diagnosisAdvice" class="text-sm font-bold text-[#37352f] leading-relaxed">
+            上の症状をチェックすると、リバウンドしない整理の優先順位が表示されます。
+          </p>
+        </div>
+      </div>
+
+      <!-- 3 Golden Rules -->
+      <div class="grid md:grid-cols-3 gap-4">
+        <div class="notion-card rounded-2xl p-5 border-t-4 border-t-emerald-600">
+          <div class="text-xs font-extrabold text-emerald-700 mb-1">原則 01</div>
+          <h3 class="text-base font-extrabold mb-2">サイドバー直下は「最大5個」まで</h3>
+          <p class="text-sm text-[#5a5852] leading-relaxed">
+            メモを取るたびに左メニューの「＋」を押すのが散らかる最大の原因です。ルート階層には<strong>「ホーム（ハブ）1つ」</strong>だけを置き、すべてその中に格納します。
+          </p>
+        </div>
+        <div class="notion-card rounded-2xl p-5 border-t-4 border-t-blue-600">
+          <div class="text-xs font-extrabold text-blue-700 mb-1">原則 02</div>
+          <h3 class="text-base font-extrabold mb-2">「00_INBOX（一時置き場）」を作る</h3>
+          <p class="text-sm text-[#5a5852] leading-relaxed">
+            分類に迷った瞬間に手が止まり散らかります。まずはすべて<strong>「📥 00_INBOX」</strong>へ放り込み、週に1回だけ仕分けることで日常の摩擦をゼロにします。
+          </p>
+        </div>
+        <div class="notion-card rounded-2xl p-5 border-t-4 border-t-purple-600">
+          <div class="text-xs font-extrabold text-purple-700 mb-1">原則 03</div>
+          <h3 class="text-base font-extrabold mb-2">データベースは「3つ」に集約</h3>
+          <p class="text-sm text-[#5a5852] leading-relaxed">
+            案件ごとに新しい表（DB）を作ると管理不能になります。<strong>①タスクDB、②ナレッジ・メモDB、③案件・プロジェクトDB</strong>の3つの大元の表を作り、ビュー（表示切替）で見せます。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: 黄金ハブ階層設計 -->
+    <section id="panel-structure" class="hidden space-y-6">
+      <div class="notion-card rounded-2xl p-5 sm:p-6">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div>
+            <h2 class="text-lg font-extrabold flex items-center gap-2">
+              <span>🏛️</span> 絶対に散らからない「1ハブ・4エリア」黄金構造
+            </h2>
+            <p class="text-sm text-[#787774]">
+              用途に合わせてモードを切り替えると、最適な階層ツリーと格納ルールを確認できます。
+            </p>
+          </div>
+          <div class="flex gap-2 bg-[#f7f6f3] p-1 rounded-xl border border-[#e9e9e7]">
+            <button onclick="setMode('business')" id="mode-business" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#37352f] text-white transition">
+              💼 個人事業・実務用
+            </button>
+            <button onclick="setMode('personal')" id="mode-personal" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-[#5a5852] transition">
+              🏠 プライベート・学習用
+            </button>
+          </div>
+        </div>
+
+        <div class="grid lg:grid-cols-12 gap-5">
+          <!-- Sidebar Preview -->
+          <div class="lg:col-span-5 bg-[#fbfbfa] border border-[#e9e9e7] rounded-xl p-4">
+            <div class="text-xs font-bold text-[#787774] mb-3 flex items-center justify-between">
+              <span>📂 Notion サイドバー完成イメージ</span>
+              <span class="text-[11px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">階層は2段まで！</span>
+            </div>
+            <div id="treeContainer" class="space-y-1.5 text-sm">
+              <!-- Rendered by JS -->
+            </div>
+          </div>
+
+          <!-- Detail Explanation -->
+          <div class="lg:col-span-7 flex flex-col justify-between bg-white border border-[#e9e9e7] rounded-xl p-5">
+            <div id="nodeDetail">
+              <!-- Rendered by JS -->
+            </div>
+            <div class="mt-5 pt-4 border-t border-[#e9e9e7] flex flex-wrap items-center justify-between gap-2">
+              <span class="text-xs text-[#787774]">※ 左側の項目をクリックすると格納ルールが見られます</span>
+              <button onclick="switchTab('template')" class="text-xs font-bold bg-[#37352f] text-white px-3.5 py-2 rounded-lg hover:opacity-90 transition">
+                この構造のコピペ用ホームを作る →
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: コピペ用ホーム生成 -->
+    <section id="panel-template" class="hidden space-y-6">
+      <div class="notion-card rounded-2xl p-5 sm:p-6">
+        <div class="flex flex-wrap items-start justify-between gap-4 mb-4">
+          <div>
+            <h2 class="text-lg font-extrabold flex items-center gap-2">
+              <span>📋</span> ワンタップ「管理ハブ（ホーム画面）」Markdown生成
+            </h2>
+            <p class="text-sm text-[#787774]">
+              下のボタンを押してコピーし、実際のNotionの<strong>新しい白紙ページに貼り付ける（Ctrl+V / ⌘+V）だけ</strong>で、整った管理トップページが一瞬で完成します。
+            </p>
+          </div>
+          <button onclick="copyHubMarkdown()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm px-5 py-3 rounded-xl shadow-sm transition flex items-center gap-2 shrink-0">
+            <span>📋</span> Notion用ホーム構造をコピー
+          </button>
+        </div>
+
+        <!-- Customization Checkboxes -->
+        <div class="bg-[#f7f6f3] p-4 rounded-xl border border-[#e9e9e7] mb-4">
+          <div class="text-xs font-extrabold text-[#37352f] mb-2.5">⚙️ ホーム画面に含めるブロックを選択（カスタマイズ）</div>
+          <div class="flex flex-wrap gap-3 text-xs font-bold">
+            <label class="flex items-center gap-1.5 bg-white px-3 py-2 rounded-lg border border-[#e9e9e7] cursor-pointer">
+              <input type="checkbox" id="chk-inbox" checked onchange="renderHubMarkdown()" class="accent-[#37352f]">
+              <span>📥 00_INBOX（一時メモ置き場）</span>
+            </label>
+            <label class="flex items-center gap-1.5 bg-white px-3 py-2 rounded-lg border border-[#e9e9e7] cursor-pointer">
+              <input type="checkbox" id="chk-today" checked onchange="renderHubMarkdown()" class="accent-[#37352f]">
+              <span>🔥 今日の最優先タスク（3つまで）</span>
+            </label>
+            <label class="flex items-center gap-1.5 bg-white px-3 py-2 rounded-lg border border-[#e9e9e7] cursor-pointer">
+              <input type="checkbox" id="chk-para" checked onchange="renderHubMarkdown()" class="accent-[#37352f]">
+              <span>🏛️ 4大エリア（進行中・継続・知識・保管庫）</span>
+            </label>
+            <label class="flex items-center gap-1.5 bg-white px-3 py-2 rounded-lg border border-[#e9e9e7] cursor-pointer">
+              <input type="checkbox" id="chk-links" checked onchange="renderHubMarkdown()" class="accent-[#37352f]">
+              <span>🔗 外部ツール・Webアプリリンク集</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Markdown Preview -->
+        <div class="relative">
+          <div class="text-xs font-bold text-[#787774] mb-1.5 flex items-center justify-between">
+            <span>プレビュー（Notionにペーストすると自動でトグル・ToDo・見出しに変換されます）</span>
+            <span class="text-emerald-700 font-bold">Markdown対応</span>
+          </div>
+          <pre id="hubMarkdownPreview" class="bg-[#1e1e1e] text-[#e5e5e5] p-4 rounded-xl text-xs sm:text-sm overflow-x-auto leading-relaxed font-mono"></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: 命名＆DB増殖防止ルール -->
+    <section id="panel-naming" class="hidden space-y-6">
+      <div class="notion-card rounded-2xl p-5 sm:p-6">
+        <h2 class="text-lg font-extrabold flex items-center gap-2 mb-1">
+          <span>🏷️</span> 一発検索できる「ページ命名ルール」ジェネレーター
+        </h2>
+        <p class="text-sm text-[#787774] mb-4">
+          「無題」をゼロにし、Quick Find（Ctrl+P / ⌘+P）で0.5秒で目的のページを呼び出す統一ルールです。
+        </p>
+
+        <div class="grid sm:grid-cols-3 gap-3 mb-4">
+          <div>
+            <label class="block text-xs font-bold text-[#5a5852] mb-1">1. 種別プレフィックス</label>
+            <select id="namePrefix" onchange="updatePageName()" class="w-full bg-[#f7f6f3] border border-[#e9e9e7] rounded-xl px-3 py-2.5 text-sm font-bold">
+              <option value="【案件】">【案件】プロジェクト・業務</option>
+              <option value="【議事録】">【議事録】打ち合わせ・記録</option>
+              <option value="【手順書】">【手順書】マニュアル・SOP</option>
+              <option value="【メモ】">【メモ】アイデア・下書き</option>
+              <option value="【資産】">【資産】テンプレート・台本</option>
+              <option value="【DB】">【DB】大元データベース</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[#5a5852] mb-1">2. 日付（任意）</label>
+            <input type="date" id="nameDate" onchange="updatePageName()" class="w-full bg-[#f7f6f3] border border-[#e9e9e7] rounded-xl px-3 py-2 text-sm font-bold">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[#5a5852] mb-1">3. 具体的なタイトル</label>
+            <input type="text" id="nameTitle" oninput="updatePageName()" placeholder="例：YouTube長尺動画企画" class="w-full bg-[#f7f6f3] border border-[#e9e9e7] rounded-xl px-3 py-2.5 text-sm font-bold">
+          </div>
+        </div>
+
+        <div class="p-4 rounded-xl bg-[#f7f6f3] border border-[#e9e9e7] flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div class="text-[11px] font-bold text-[#787774]">生成された標準ページ名</div>
+            <div id="generatedPageName" class="text-base sm:text-lg font-extrabold text-[#37352f] mt-0.5">
+              【案件】2026-11-18_新規プロジェクト
+            </div>
+          </div>
+          <button onclick="copyGeneratedName()" class="bg-[#37352f] hover:opacity-90 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition">
+            📋 タイトルをコピー
+          </button>
+        </div>
+      </div>
+
+      <!-- DB Proliferation Prevention -->
+      <div class="notion-card rounded-2xl p-5 sm:p-6">
+        <h3 class="text-base font-extrabold mb-3 flex items-center gap-2">
+          <span>🛑</span> 「データベース増殖病」を防ぐチェック基準
+        </h3>
+        <div class="grid md:grid-cols-2 gap-4 text-sm">
+          <div class="p-4 rounded-xl bg-red-50/70 border border-red-200">
+            <div class="font-extrabold text-red-800 mb-1.5">❌ 散らかるNGパターン</div>
+            <ul class="space-y-1.5 text-[#5a5852] text-xs leading-relaxed">
+              <li>・「2026年11月タスク」「2026年12月タスク」と月ごとに別の表を作る</li>
+              <li>・ページを作るたびに新しいインラインデータベースを埋め込む</li>
+              <li>・プロパティ（列）を15個以上作って入力が面倒になり放置する</li>
+            </ul>
+          </div>
+          <div class="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200">
+            <div class="font-extrabold text-emerald-800 mb-1.5">⭕ 散らからない正解パターン</div>
+            <ul class="space-y-1.5 text-[#5a5852] text-xs leading-relaxed">
+              <li>・大元の表は「タスクDB」1つだけ。<strong>「リンクドビュー（/linked）」</strong>で各ページに表示する</li>
+              <li>・列は「名前」「ステータス」「期限」「カテゴリ」の<strong>4〜5列以内</strong>に絞る</li>
+              <li>・終わった項目は削除せず、ステータスを「完了/アーカイブ」にしてフィルタで隠す</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: 週1回・5分リセット手順 -->
+    <section id="panel-routine" class="hidden space-y-6">
+      <div class="notion-card rounded-2xl p-5 sm:p-6">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div>
+            <h2 class="text-lg font-extrabold flex items-center gap-2">
+              <span>🧹</span> リバウンドゼロ！週1回・5分お片付けチェックリスト
+            </h2>
+            <p class="text-sm text-[#787774]">
+              毎日整理する必要はありません。週末に5分だけこの6項目にチェックを入れるだけで、Notionが常に新品のように保てます。
+            </p>
+          </div>
+          <button onclick="resetChecklist()" class="text-xs font-bold text-[#787774] hover:text-[#37352f] border border-[#e9e9e7] px-3 py-2 rounded-lg bg-white">
+            🔄 チェックをリセット
+          </button>
+        </div>
+
+        <div class="space-y-2.5" id="routineChecklist">
+          <!-- Rendered by JS -->
+        </div>
+
+        <div class="mt-6 p-4 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900 leading-relaxed">
+          <strong>💡 時短ショートカット3選（これだけ覚えればOK）：</strong><br>
+          ・<kbd class="bg-white px-1.5 py-0.5 rounded border border-blue-300 font-mono">Ctrl + P</kbd>（Macは <kbd class="bg-white px-1.5 py-0.5 rounded border border-blue-300 font-mono">⌘ + P</kbd>）：どの画面からでも瞬時にページ検索・移動<br>
+          ・<kbd class="bg-white px-1.5 py-0.5 rounded border border-blue-300 font-mono">Ctrl + Shift + P</kbd>（Macは <kbd class="bg-white px-1.5 py-0.5 rounded border border-blue-300 font-mono">⌘ + Shift + P</kbd>）：今開いている散らかったページを別の親ページへ一発移動<br>
+          ・<kbd class="bg-white px-1.5 py-0.5 rounded border border-blue-300 font-mono">&gt; </kbd>（半角大なり＋スペース）：散らかりがちな長文を折りたたむ「トグルリスト」を即作成
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer (BYOD & Legal Disclaimer) -->
+  <footer class="border-t border-[#e9e9e7] bg-white py-5 px-4 mt-8">
+    <div class="max-w-5xl mx-auto text-center space-y-1.5">
+      <p class="text-xs font-bold text-[#5a5852]">
+        Notion 整理・散らかり防止マスター（ブラウザ完結・登録不要・データ端末内自動保存）
+      </p>
+      <p class="text-[11px] text-[#787774]">
+        ※本ツールはNotionユーザー向けの個人制作による非公式サポートツールです（Notion Labs, Inc.様とは関係ありません）。<br>
+        ※入力・チェック状態はご利用中のブラウザ内（LocalStorage）にのみ保持され、外部サーバーへ送信されることはありません。本ツールの利用により生じた損害等について制作者は責任を負いかねます。
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    // State
+    const STORAGE_KEY = 'notion_organizer_state_v1';
+    let state = {
+      symptoms: [],
+      mode: 'business',
+      selectedNodeIndex: 0,
+      checklist: []
+    };
+
+    // Load saved state
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      if (saved) state = { ...state, ...saved };
+    } catch (e) {}
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {}
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 2400);
+    }
+
+    // Tabs
+    function switchTab(tabId) {
+      const tabs = ['diagnose', 'structure', 'template', 'naming', 'routine'];
+      tabs.forEach(t => {
+        document.getElementById(`panel-${t}`).classList.toggle('hidden', t !== tabId);
+        const btn = document.getElementById(`tab-${t}`);
+        if (t === tabId) {
+          btn.classList.remove('tab-inactive');
+          btn.classList.add('tab-active');
+        } else {
+          btn.classList.remove('tab-active');
+          btn.classList.add('tab-inactive');
+        }
+      });
+    }
+
+    // TAB 1: Symptoms
+    const symptomsData = [
+      { id: 's1', title: '左サイドバーにページがずらっと並んでいる', desc: 'どこに何があるかスクロールしないと分からない', fix: 'まずは「🏠 管理ハブ（ホーム）」を1ページだけ作り、サイドバー直下の散らかったページをすべてその中へドラッグ＆ドロップで格納しましょう。' },
+      { id: 's2', title: '「無題」のページが大量に放置されている', desc: 'とりあえず「＋」を押して作った空っぽ・途中メモが多い', fix: '検索バーで「無題」と検索し、不要なものはゴミ箱へ、残すものは「📥 00_INBOX」へ移動してください。' },
+      { id: 's3', title: '似たようなデータベース（表）が何個もある', desc: 'プロジェクトや月ごとに新しいテーブルを作ってしまう', fix: '表を増やすのをやめ、「タスクDB」「ナレッジDB」の2〜3個に統合し、リンクドビューで表示を切り替える運用に切り替えましょう。' },
+      { id: 's4', title: '作ったテンプレートや記録を結局開かなくなる', desc: '入力項目が多すぎて毎日の操作が面倒になっている', fix: 'プロパティ（列）を4つ以下に減らし、スマホから10秒で書ける「00_INBOX」への箇条書きメモから再スタートしましょう。' }
+    ];
+
+    function renderSymptoms() {
+      const container = document.getElementById('symptomList');
+      container.innerHTML = symptomsData.map(s => {
+        const checked = state.symptoms.includes(s.id);
+        return `
+          <div onclick="toggleSymptom('${s.id}')" class="p-4 rounded-xl border cursor-pointer transition select-none ${checked ? 'bg-amber-50/80 border-amber-400 shadow-sm' : 'bg-[#fbfbfa] border-[#e9e9e7] hover:bg-[#f2f1ed]'}">
+            <div class="flex items-start gap-2.5">
+              <div class="mt-0.5 w-5 h-5 rounded flex items-center justify-center text-xs font-bold border ${checked ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white border-gray-300 text-transparent'}">✓</div>
+              <div>
+                <div class="text-sm font-extrabold text-[#37352f]">${s.title}</div>
+                <div class="text-xs text-[#787774] mt-0.5">${s.desc}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const adviceEl = document.getElementById('diagnosisAdvice');
+      if (state.symptoms.length === 0) {
+        adviceEl.textContent = '上の症状をチェックすると、リバウンドしない整理の優先順位が表示されます。';
+      } else {
+        const first = symptomsData.find(s => state.symptoms.includes(s.id));
+        adviceEl.innerHTML = `<span class="text-amber-800">【最優先アクション】</span> ${first.fix}（まずは「3. コピペ用ホーム生成」からハブページを1つ作ると一気に片付きます）`;
+      }
+    }
+
+    function toggleSymptom(id) {
+      if (state.symptoms.includes(id)) {
+        state.symptoms = state.symptoms.filter(x => x !== id);
+      } else {
+        state.symptoms.push(id);
+      }
+      saveState();
+      renderSymptoms();
+    }
+
+    // TAB 2: Structure
+    const structures = {
+      business: [
+        { icon: '🏠', name: '【HOME】事業・業務統合ハブ', level: 0, role: 'サイドバーに置く唯一の親ページ', rule: '毎日の起点となるダッシュボード。この中に以下の4エリアと大元DBをすべて格納します。' },
+        { icon: '📥', name: '00_INBOX（一時メモ・未整理箱）', level: 1, role: '迷ったら全部ここに入れる箱', rule: '移動中や作業中の思いつき、URL、議事録の下書きは分類せずすべてここへ放り込みます。週1回空にします。' },
+        { icon: '🚀', name: '01_Projects（進行中の案件・企画）', level: 1, role: 'ゴールと期限がある仕事', rule: 'YouTube動画制作、アプリ開発、クライアント案件など「終わりがあるもの」を置きます。終わったら04_Archiveへ移動。' },
+        { icon: '🔄', name: '02_Areas（継続業務・ルーティン）', level: 1, role: '終わりがない日常管理', rule: '日々の運行・在庫管理リンク、経理・確定申告準備、SNS運用ルールなど継続的に維持する領域です。' },
+        { icon: '📚', name: '03_Resources（知識・マニュアル・資産）', level: 1, role: '再利用するノウハウ倉庫', rule: '業務マニュアル（SOP）、AIプロンプト集、GASコード控え、構成テンプレートなどを保管します。' },
+        { icon: '🗄️', name: '04_Archive（完了・保管庫）', level: 1, role: '終わった案件の避難所', rule: '完了したプロジェクトや去年の記録は削除せずここへ移動。視界から消しつつ検索ではいつでも出せます。' },
+        { icon: '🗃️', name: '99_Master_DB（大元データベース置き場）', level: 1, role: '全データの心臓部（直接触らない）', rule: '「タスクDB」「メモ・議事録DB」の大元だけをここに隔離し、普段は01〜03からリンクドビューで呼び出します。' }
+      ],
+      personal: [
+        { icon: '🏡', name: '【HOME】マイライフ統合ハブ', level: 0, role: 'サイドバーに置く唯一の親ページ', rule: 'プライベート・趣味・学習のすべてをこの1ページからアクセスできるように集約します。' },
+        { icon: '📥', name: '00_INBOX（とりあえずメモ）', level: 1, role: '買い物・思いつきの一時置き場', rule: '気になった記事、欲しいものリスト、ふとしたアイデアを0.5秒で書き留める場所です。' },
+        { icon: '🎯', name: '01_Projects（今年の目標・イベント）', level: 1, role: '期限付きの計画', rule: '旅行計画、資格試験の勉強、引っ越し準備など、達成したら完了するイベントを管理します。' },
+        { icon: '🌿', name: '02_Areas（暮らし・家計・健康）', level: 1, role: '日々の生活基盤', rule: '家計・サブスク一覧、家電の保証書メモ、健康管理、おうちストック管理アプリへのリンク等をまとめます。' },
+        { icon: '🎸', name: '03_Resources（趣味・学びのノート）', level: 1, role: '好きなこと・知識のストック', rule: '音楽・作曲コードメモ、読書記録、レシピ集、AI学習ノートなど何度でも見返すノートを置きます。' },
+        { icon: '🗄️', name: '04_Archive（過去の思い出・完了済）', level: 1, role: '終わった計画の保管庫', rule: '終了した旅行のしおりや過去の目標ページを移動し、現在の画面を常にスッキリ保ちます。' }
+      ]
+    };
+
+    function setMode(mode) {
+      state.mode = mode;
+      state.selectedNodeIndex = 0;
+      saveState();
+      document.getElementById('mode-business').className = mode === 'business'
+        ? 'px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#37352f] text-white transition'
+        : 'px-3.5 py-1.5 rounded-lg text-xs font-bold text-[#5a5852] transition';
+      document.getElementById('mode-personal').className = mode === 'personal'
+        ? 'px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#37352f] text-white transition'
+        : 'px-3.5 py-1.5 rounded-lg text-xs font-bold text-[#5a5852] transition';
+      renderStructure();
+    }
+
+    function renderStructure() {
+      const list = structures[state.mode];
+      const treeEl = document.getElementById('treeContainer');
+      treeEl.innerHTML = list.map((item, idx) => {
+        const selected = idx === state.selectedNodeIndex;
+        const indent = item.level === 1 ? 'ml-5' : '';
+        return `
+          <div onclick="selectNode(${idx})" class="${indent} px-3 py-2 rounded-lg cursor-pointer flex items-center gap-2 transition ${selected ? 'bg-[#37352f] text-white font-bold shadow-sm' : 'hover:bg-[#efeeea] text-[#37352f] font-medium'}">
+            <span>${item.icon}</span>
+            <span class="truncate">${item.name}</span>
+          </div>
+        `;
+      }).join('');
+
+      const current = list[state.selectedNodeIndex] || list[0];
+      document.getElementById('nodeDetail').innerHTML = `
+        <div class="inline-block text-xs font-extrabold px-2.5 py-1 rounded-md bg-[#f7f6f3] border border-[#e9e9e7] text-[#5a5852] mb-2">
+          ${current.role}
+        </div>
+        <h3 class="text-xl font-extrabold text-[#37352f] flex items-center gap-2 mb-3">
+          <span>${current.icon}</span>
+          <span>${current.name}</span>
+        </h3>
+        <div class="p-4 rounded-xl bg-[#fbfbfa] border border-[#e9e9e7] text-sm text-[#37352f] leading-relaxed">
+          <strong>📌 運用・格納ルール：</strong><br>
+          ${current.rule}
+        </div>
+      `;
+    }
+
+    function selectNode(idx) {
+      state.selectedNodeIndex = idx;
+      saveState();
+      renderStructure();
+    }
+
+    // TAB 3: Markdown Hub Generator
+    function generateHubText() {
+      const incInbox = document.getElementById('chk-inbox').checked;
+      const incToday = document.getElementById('chk-today').checked;
+      const incPara = document.getElementById('chk-para').checked;
+      const incLinks = document.getElementById('chk-links').checked;
+
+      let lines = [];
+      lines.push('# 🏠 ワークスペース統合ハブ（HOME）');
+      lines.push('> 💡 **鉄則：** 新しいメモはサイドバーの「＋」で作らず、まず下の「00_INBOX」へ書くこと！');
+      lines.push('');
+
+      if (incToday) {
+        lines.push('## 🔥 今日の最優先タスク（3つまで）');
+        lines.push('- [ ] 最優先タスク①：');
+        lines.push('- [ ] 最優先タスク②：');
+        lines.push('- [ ] 最優先タスク③：');
+        lines.push('');
+      }
+
+      if (incInbox) {
+        lines.push('## 📥 00_INBOX（一時メモ・未整理置き場）');
+        lines.push('> 思いつき・URL・下書きは全部ここに放り込み、週末に下のエリアへ振り分ける');
+        lines.push('- ');
+        lines.push('');
+      }
+
+      if (incPara) {
+        lines.push('## 🏛️ 4大エリア（この中にサブページを格納）');
+        lines.push('### 🚀 01_Projects（進行中の案件・期限あり）');
+        lines.push('- ');
+        lines.push('### 🔄 02_Areas（継続業務・日常ルーティン）');
+        lines.push('- ');
+        lines.push('### 📚 03_Resources（マニュアル・知識・テンプレート資産）');
+        lines.push('- ');
+        lines.push('### 🗄️ 04_Archive（完了済み・過去の保管庫）');
+        lines.push('- ');
+        lines.push('');
+      }
+
+      if (incLinks) {
+        lines.push('## 🔗 よく使う外部ツール・自作Webアプリ');
+        lines.push('- [ ] Googleスプレッドシート管理フォルダ：');
+        lines.push('- [ ] 業務記録・管理Webアプリ：');
+        lines.push('');
+      }
+
+      return lines.join('\n');
+    }
+
+    function renderHubMarkdown() {
+      document.getElementById('hubMarkdownPreview').textContent = generateHubText();
+    }
+
+    function copyHubMarkdown() {
+      const text = generateHubText();
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Notion貼り付け用Markdownをコピーしました！');
+      });
+    }
+
+    // TAB 4: Page Name Generator
+    function initDate() {
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('nameDate').value = today;
+      updatePageName();
+    }
+
+    function updatePageName() {
+      const prefix = document.getElementById('namePrefix').value;
+      const date = document.getElementById('nameDate').value;
+      const title = document.getElementById('nameTitle').value.trim() || '新規ページタイトル';
+      const formatted = date ? `${prefix}${date}_${title}` : `${prefix}${title}`;
+      document.getElementById('generatedPageName').textContent = formatted;
+    }
+
+    function copyGeneratedName() {
+      const text = document.getElementById('generatedPageName').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast(`「${text}」をコピーしました！`);
+      });
+    }
+
+    // TAB 5: Weekly Routine Checklist
+    const routineItems = [
+      { id: 'r1', title: '「00_INBOX」に溜まったメモを01〜03のエリアへ振り分ける（不要なものは削除）', time: '約2分' },
+      { id: 'r2', title: 'サイドバー直下に飛び出している迷子ページを「HOME」の中へドラッグ移動する', time: '約30秒' },
+      { id: 'r3', title: '検索（Ctrl+P / ⌘+P）で「無題」と打ち、空っぽのページをゴミ箱へ捨てる', time: '約30秒' },
+      { id: 'r4', title: '今週完了したプロジェクト・案件を「04_Archive」へ移動する', time: '約1分' },
+      { id: 'r5', title: '来週の「最優先タスク3つ」だけをHOME画面にセットする', time: '約1分' },
+      { id: 'r6', title: '新しいデータベース（表）を勝手に増やしていないか確認する', time: '確認のみ' }
+    ];
+
+    function renderChecklist() {
+      const container = document.getElementById('routineChecklist');
+      container.innerHTML = routineItems.map(item => {
+        const done = state.checklist.includes(item.id);
+        return `
+          <div onclick="toggleRoutine('${item.id}')" class="p-3.5 rounded-xl border flex items-center justify-between gap-3 cursor-pointer transition select-none ${done ? 'bg-emerald-50/70 border-emerald-300' : 'bg-[#fbfbfa] border-[#e9e9e7] hover:bg-[#f2f1ed]'}">
+            <div class="flex items-center gap-3">
+              <div class="w-5 h-5 rounded flex items-center justify-center text-xs font-bold border ${done ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white border-gray-300 text-transparent'}">✓</div>
+              <span class="text-sm font-bold ${done ? 'line-through text-[#787774]' : 'text-[#37352f]'}">${item.title}</span>
+            </div>
+            <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-white border border-[#e9e9e7] text-[#787774] shrink-0">${item.time}</span>
+          </div>
+        `;
+      }).join('');
+
+      const count = state.checklist.length;
+      const total = routineItems.length;
+      const pct = Math.round((count / total) * 100);
+      document.getElementById('progressText').textContent = `${count} / ${total} 完了 (${pct}%)`;
+      document.getElementById('progressBar').style.width = `${pct}%`;
+    }
+
+    function toggleRoutine(id) {
+      if (state.checklist.includes(id)) {
+        state.checklist = state.checklist.filter(x => x !== id);
+      } else {
+        state.checklist.push(id);
+      }
+      saveState();
+      renderChecklist();
+    }
+
+    function resetChecklist() {
+      state.checklist = [];
+      saveState();
+      renderChecklist();
+      showToast('チェックリストをリセットしました');
+    }
+
+    // Init
+    renderSymptoms();
+    setMode(state.mode);
+    renderHubMarkdown();
+    initDate();
+    renderChecklist();
+  </script>
+</body>
+</html>
